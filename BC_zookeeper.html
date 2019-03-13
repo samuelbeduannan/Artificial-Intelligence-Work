@@ -1,0 +1,234 @@
+<!document html>
+
+<html lang='en'>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class='container'>
+        <h1 style='text-align: center'>Backward Chaining for ZooKeeper</h1>
+        <br>
+
+        <div class='checkbox-inline'><label for='bc'><input id='bc' type="checkbox" name='property' value="BlackColor">BlackColor</label></div>
+        <div class='checkbox-inline'><label for='bs'><input id='bs' type="checkbox" name='property' value="BlackStrip">BlackStrip</label></div>
+        <div class='checkbox-inline'><label for='cc'><input id='cc' type="checkbox" name='property' value="ChewCud" checked>ChewCud</label></div>
+        <div class='checkbox-inline'><label for='cl'><input id='cl' type="checkbox" name='property' value="Claw">Claw</label></div>
+        <div class='checkbox-inline'><label for='ds'><input id='ds' type="checkbox" name='property' value="DarkSpot" checked>DarkSpot</label></div>
+        <div class='checkbox-inline'><label for='em'><input id='em' type="checkbox" name='property' value="EatMeat">EatMeat</label></div>
+        <div class='checkbox-inline'><label for='ft'><input id='ft' type="checkbox" name='property' value="Feather">Feather</label></div>
+        <div class='checkbox-inline'><label for='fp'><input id='fp' type="checkbox" name='property' value="ForwardPointingEye">ForwardPointingEye</label></div>
+        <div class='checkbox-inline'><label for='fl'><input id='fl' type="checkbox" name='property' value="Fly">Fly</label></div>
+        <div class='checkbox-inline'><label for='fw'><input id='fw' type="checkbox" name='property' value="FlyWell">FlyWell</label></div>
+        <div class='checkbox-inline'><label for='ha'><input id='ha' type="checkbox" name='property' value="Hair" checked>Hair</label></div>
+        <div class='checkbox-inline'><label for='hf'><input id='hf' type="checkbox" name='property' value="Hoof">Hoof</label></div>
+        <div class='checkbox-inline'><label for='le'><input id='le' type="checkbox" name='property' value="LayEgg">LayEgg</label></div>
+        <div class='checkbox-inline'><label for='ll'><input id='ll' type="checkbox" name='property' value="LongLeg" checked>LongLeg</label></div>
+        <div class='checkbox-inline'><label for='ln'><input id='ln' type="checkbox" name='property' value="LongNeck" checked>LongNeck</label></div>
+        <div class='checkbox-inline'><label for='mk'><input id='mk' type="checkbox" name='property' value="Milk">Milk</label></div>
+        <div class='checkbox-inline'><label for='nf'><input id='nf' type="checkbox" name='property' value="NotFly">NotFly</label></div>
+        <div class='checkbox-inline'><label for='pt'><input id='pt' type="checkbox" name='property' value="PointedTooth">PointedTooth</label></div>
+        <div class='checkbox-inline'><label for='sw'><input id='sw' type="checkbox" name='property' value="Swim">Swim</label></div>
+        <div class='checkbox-inline'><label for='tc'><input id='tc' type="checkbox" name='property' value="TawnyColor" checked>TawnyColor</label></div>
+        <div class='checkbox-inline'><label for='wc'><input id='wc' type="checkbox" name='property' value="WhiteColor">WhiteColor</label></div>
+
+        <br>
+        <br>
+        <div style='margin:auto; text-align:center'><button id='find' type="button" class="btn btn-primary">Find what animal it is</button></div>
+        <br>
+        <br>
+        <div id='msg-pane'></div>
+    </div>
+</body>
+
+<script>
+    function printMessage(msg) {
+        document.getElementById('msg-pane').innerHTML += msg;
+    }
+
+    function printlnMessage(msg) {
+        document.getElementById('msg-pane').innerHTML += msg + '<br>';
+    }
+
+    function clearMessage() {
+        document.getElementById('msg-pane').innerHTML = '';
+    }
+</script>
+
+<script>
+    /*
+    *   Knowledge base
+    */
+    
+    // Propositional symbols:
+    //   BlackColor, BlackStrip, ChewCud, Claw, DarkSpot, EatMeat, Feather, ForwardPointingEye, Fly, FlyWell,
+    //   Hair, Hoof, LayEgg, LongLeg, LongNeck, Milk, NotFly, PointedTooth, Swim, TawnyColor, WhiteColor
+    
+    var rules = {};
+    rules['Mammal'] = [['Hair'], ['Milk']];
+    rules['Bird'] = [['Feather'], ['Fly', 'LayEgg']];
+    rules['Carnivore'] = [['Mammal', 'EatMeat'], ['Mammal', 'PointedTooth', 'Claw', 'ForwardPointingEye']];
+    rules['Ungulate'] = [['Mammal', 'Hoof'], ['Mammal', 'ChewCud']];
+    rules['Cheetah'] = [['Carnivore', 'TawnyColor', 'DarkSpot']];
+    rules['Tiger'] = [['Carnivore', 'TawnyColor', 'BlackStrip']];
+    rules['Giraffe'] = [['Ungulate', 'LongLeg','LongNeck', 'TawnyColor', 'DarkSpot']];
+    rules['Zebra'] = [['Ungulate', 'WhiteColor', 'BlackStrip']];
+    rules['Ostrich'] = [['Bird', 'NotFly', 'LongNeck', 'LongLeg', 'BlackColor', 'WhiteColor']];
+    rules['Penguin'] = [['Bird', 'NotFly', 'Swim', 'BlackColor', 'WhiteColor']];
+    rules['Albatross'] = [['Bird', 'Fly', 'FlyWell']];
+
+    /*
+    *   Facts (, i.e., observations)
+    */
+    
+    var facts = [];  // It will be filled when the user clicks the button. 1017
+
+    /*
+    *   Animals in the zoo
+    */
+    
+    var animals = ['Albatross', 'Penguin', 'Ostrich', 'Zebra', 'Giraffe', 'Tiger', 'Cheetah'];
+
+    /*
+    *   Obtain the facts (i.e., observations) from the user,
+    *   save then into the queue, 'facts', and
+    *   invoke 'find()' to find what animal is.
+    */
+    
+    $(document).ready(function() {
+        $("#find").click(function() {
+            facts = [];
+            $.each($("input[name='property']:checked"), function(){            
+                facts.push($(this).val());
+            });
+
+            clearMessage();
+            printlnMessage('Properties are ' + facts.join(', ') + '.<br>');
+
+            find();
+        });
+    });
+
+
+    /*
+    *   A function to check each animal if it has the facts, using backward chaining
+    */
+    
+    function find()
+    {
+        // For each animal, check if it has the facts, using the backward chaining algorithm.
+        // You need to print the result for each animal.
+        for (var i = 0; i < animals.length; i++) 
+        {
+            if(BC(rules, facts, animals[i]) == true)
+            {
+               printlnMessage("The result of the animal is: " +animals[i] + '<br>'); 
+            }
+           
+            else
+            {
+                printlnMessage(animals[i] + " does not match chosen properties" + '<br>');
+            }
+            
+            
+            
+        }
+    }
+
+    /*
+    *   Inference engine - backward chaining
+    *   BC(), BC_anded()
+    */
+    
+function is_fact(facts, ps)  // check if ps is included in facts[] using includes function in the array,
+                             //   i.e., facts.includes(...).
+{
+    if(facts.includes(ps))
+    {return true;}
+    else
+{return false;}
+
+}
+    
+    function there_is_rule(rules, ps)
+{
+    if (rules[ps] == undefined)  // rules is an associative array. You can check if the value is undefined.
+              {  return false;  }          // You can compare the value to undefined.
+       
+    else
+    {return true;}
+
+}
+    
+function BC_anded(rules, facts, rule)
+{
+    // for multiple proposition symbols,
+    var valid = true;
+    for (var x = 0; x<rule.length; x++)
+{
+        valid = valid && BC(rules, facts, rule[x]);
+
+}
+    return valid;
+
+}
+
+function BC(rules, facts, ps)
+{
+    // if ps is a fact
+    if(is_fact(facts, ps)) {
+    
+
+        return true;
+    }
+    // if there is no rule used for ps;
+    if(there_is_rule(rules, ps) == false)
+    {
+         return false;
+    }
+    // for multiple rules
+    
+    var valid =false
+    for (var i = 0; i < rules[ps].length; i++)  // the backward chaining results for rules should be ORed. 
+    {
+        // for multiple propositions in a rule
+        // the backward chaining results for positional symbols, rules[ps][i][], in a rule should be ANDed using BC_anded().
+        if(valid == true || BC_anded(rules, facts, rules[ps][i]) == true)
+            {
+                valid = true;
+
+                
+            }
+    }
+
+    if (valid){
+        facts.push(ps);  // push it into the facts queue
+    
+    }
+        return valid;
+
+}
+    /*
+    *   Utility functions
+    */
+    
+    function printMessage(msg) {
+        document.getElementById('msg-pane').innerHTML += msg;
+    }
+
+    function printlnMessage(msg) {
+        document.getElementById('msg-pane').innerHTML += msg + '<br>';
+    }
+
+    function clearMessage() {
+        document.getElementById('msg-pane').innerHTML = '';
+    }
+    
+</script>
+
+</html>

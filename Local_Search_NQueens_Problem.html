@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel='stylesheet' href='http://cs.tru.ca/~mlee/comp268x-short-bgp/Software/TRU Board Games/tru_game_board.css?0'>
+    <script src = 'http://cs.tru.ca/~mlee/comp268x-short-bgp/Software/TRU Board Games/tru_game_board.lib.js?0'></script>
+
+    <link type='text/css' rel='stylesheet' href='http://cs.tru.ca/~mlee/tab.css'>
+    <link type='text/css' rel='stylesheet' href='http://cs.tru.ca/~mlee/class.css'>
+    <script src='http://cs.tru.ca/~mlee/class.js'></script>
+</head>
+
+<body>
+    <div id='title' class = 'pane_upper2'>
+		<h1>Local Search for <i>n</i>-Queens Problem</h1>
+	</div>
+	
+    <div class='pane_lower2'>
+		Board size: <input id="size" type="text" value="30"></input><br>
+		Maximum number of trials: <input id="max-trials" type="text" value="50"></input><br><br>
+		<button id="search">Search</button><br>
+
+		<br>
+		<div id="output">
+		</div>
+
+		<br>
+		<div id="board">
+		</div>
+
+		<br>
+		<div id="output2">
+		</div>
+	</div>
+</body>
+</html>
+
+<script>
+	var SIZE;
+	var MAX;
+	
+	/*
+	*	When the "Search" button is clicked
+	*/
+	
+	document.getElementById("search").onclick = function()
+	{
+		initializeOutput();
+
+		// read the board size, and the maximum number of trials
+		SIZE = document.getElementById("size").value;
+		MAX = document.getElementById("max-trials").value;
+
+		// column variables
+		var columns = [];  // Each column variable keeps the position of a queen which lies in [0, MAX). 
+		for (var col = 0; col < SIZE; col++)
+			columns[col] = -1;
+		
+		// Run the local search maximum MAX times
+        // The loop should stop if a goal is found.
+		var count;
+		for (count = 0; count < MAX; count++) {
+            initialize(columns);//initialize function
+            localSearch(columns);
+            if(isGoal(columns)) break;
+		}
+		
+		// if a goal is found
+		if (count < MAX) {
+			printMessage("Found");
+			drawBoard(columns);
+		}
+		// otherwise
+		else
+			printMessage("Failed");
+	}
+	
+        //copy five function here
+    function initialize(column)
+    {
+        for (var col = 0; col < column.length; col++)
+            column[col] = Math.floor(Math.random() * column.length);  // Math.floor(), Math.random()
+    } 
+	
+        function countConflicts(column, col)
+    {
+        var count = 0;
+		
+        // the same row
+        for (var c = 0; c < column.length; c++)
+            if(column[c] == column[col]){
+            count++
+
+}
+					
+        // the positive diagonal
+        for (var c = 0; c < column.length; c++)
+            if (c < col) {
+                if (column[c] == column[col] - (col - c))
+                    count++;
+            }
+            else if (c > col) {
+                if(column[c] == column[col] + (c - col))
+                count++;
+            }
+					
+        // the negative diagonal
+               for (var c = 0; c < column.length; c++)        
+               if(c < col)
+                 {
+        if(column[c] == column[col] + (col-c))
+         count++;
+         }
+     else if(c > col)
+     {
+       if(column[c] == column[col] - (c - col))
+       count++;
+
+      }
+		
+        return count-1;
+    }
+        
+            function isGoal(column)  // It needs to return true or false.
+    {
+        var sum = 0;
+        for(var col = 0; col < column.length; col++)
+{
+    sum += countConflicts(column, col);
+    
+}
+        if(sum == 0)
+        {
+          return true;
+        }
+      else 
+      return false;
+}
+       
+        
+        function improve(column, col)
+    {
+        var currentPosition = column[col];
+        var currentConflicts = countConflicts(column, col);
+        var minPosition = currentPosition;
+        var minConflicts = currentConflicts;
+		
+        // find the position that has minimum conflicts
+          for(var position = 0; position<column.length; position++){
+              column[col] = position;
+
+             if(countConflicts(column, col) < minConflicts)
+             {
+              minPosition = position;
+              minConflicts = countConflicts(column, col);
+              }
+		}
+        // if better position is found,
+        //     update the position, and
+        //     return true.
+             if(minPosition != currentPosition)
+             {
+               column[col] = minPosition;
+              return true;
+              }
+		
+                else {
+        // recover the current positon
+        column[col] = currentPosition;
+        
+        return false;
+                }
+    }
+        
+        function localSearch(column)
+    {
+        var improved;
+        while(true) {  // until there is no improvement
+            improved = 0;
+            // improve for each column
+            for(var col = 0; col<column.length; col++)
+             {
+                if(!improve(column, col))improved++;             
+              }
+            // if there is no more improvement, then break
+            
+            if(improved == column.length)
+                break;
+        }
+    }
+        
+        
+	/*
+	*	Utility functions
+    *       No change required
+	*/
+
+	function initializeOutput()
+	{
+		document.getElementById("output").innerHTML = "";
+		document.getElementById("output2").innerHTML = "";
+		document.getElementById("board").innerHTML = "";
+	}
+	
+	function drawBoard(columns)
+	{
+        var board = new TRUGameBoard(SIZE, SIZE, "borderLine", SIZE*20, SIZE*20, "SkyBlue");
+        board.draw('board');
+		
+		for (var col = 0; col < SIZE; col++) {
+			board.cellContent(columns[col], col, "Q");
+			//document.getElementById("output2").innerHTML += col + ", " + columns[col] + "<br>";
+		}
+	}
+	
+	function printMessage(msg)
+	{
+		document.getElementById("output").innerHTML = msg;
+	}
+</script>
